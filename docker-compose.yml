@@ -1,36 +1,64 @@
-version: '3.9'
+version: "3.9"
+
+# ── Production Deployment Configuration ────────────────────────────────────
+#
+#   This docker-compose file is designed for production deployments.
+#   The auth-service runs with its own isolated PostgreSQL database.
+#
+# ── Services ───────────────────────────────────────────────────────────────
+#
+#   auth-service      gRPC server :50051
+#   postgres          PostgreSQL database for auth_db
+#
+# Usage:
+#   docker compose up -d
+#   docker compose logs -f auth-service
 
 services:
-  auth-service:
-    build: .
-    ports:
-      - "50051:50051"
-    environment:
-      - DATABASE_HOST=postgres
-      - DATABASE_PORT=5432
-      - DATABASE_USER=postgres
-      - DATABASE_PASSWORD=postgres
-      - DATABASE_DBNAME=auth_db
-    depends_on:
-      postgres:
-        condition: service_healthy
-    restart: unless-stopped
+    # ── postgres ───────────────────────────────────────────────────────────────
+    postgres:
+        image: postgres:18.1-bookworm
+        environment:
+            POSTGRES_USER: ${DATABASE_USER:-postgres}
+            POSTGRES_PASSWORD: ${DATABASE_PASSWORD:-postgres}
+            POSTGRES_DB: ${DATABASE_DBNAME:-auth_db}
+        volumes:
+            - postgres_data:/var/lib/postgresql/data
+        healthcheck:
+            test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USER:-postgres}"]
+            interval: 5s
+            timeout: 5s
+            retries: 5
+        ports:
+            - "${DATABASE_PORT:-5432}:5432"
+        networks:
+            - auth-network
 
-  postgres:
-    image: postgres:18.1-bookworm
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: auth_db
-    volumes:
-      - postgres_data:/var/lib/postgresql
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 5s
-      timeout: 5s
-      retries: 3
-    ports:
-      - "5432:5432"
+    # ── auth-service ──────────────────────────────────────────────────────────
+    auth-service:
+        build: .
+        ports:
+            - "${GRPC_PORT:-50051}:${GRPC_PORT:-50051}"
+        environment:
+            APP_ENV: ${APP_ENV:-production}
+            DATABASE_HOST: postgres
+            DATABASE_PORT: 5432
+            DATABASE_USER: ${DATABASE_USER:-postgres}
+            DATABASE_PASSWORD: ${DATABASE_PASSWORD:-postgres}
+            DATABASE_DBNAME: ${DATABASE_DBNAME:-auth_db}
+            DATABASE_SSLMODE: ${DATABASE_SSLMODE:-disable}
+            GRPC_PORT: ${GRPC_PORT:-50051}
+            JWT_SECRETKEY: ${JWT_SECRETKEY:-change-me-in-production}
+        depends_on:
+            postgres:
+                condition: service_healthy
+        restart: unless-stopped
+        networks:
+            - auth-network
+
+networks:
+    auth-network:
+        driver: bridge
 
 volumes:
-  postgres_data:
+    postgres_data:

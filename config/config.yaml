@@ -1,19 +1,19 @@
 app:
-  name: auth-service
-  env: development
+    name: auth-service
+    env: ${APP_ENV}
 
 database:
-  host: localhost
-  port: 5432
-  user: postgres
-  password: postgres
-  dbname: auth_db
-  sslmode: disable
+    host: ${DATABASE_HOST}
+    port: ${DATABASE_PORT}
+    user: ${DATABASE_USER}
+    password: ${DATABASE_PASSWORD}
+    dbname: ${DATABASE_DBNAME}
+    sslmode: ${DATABASE_SSLMODE}
 
 grpc:
-  port: 50051
+    port: ${GRPC_PORT}
 
 jwt:
-  secretKey: change-me-in-production
-  accessTokenTTL: 15m
-  refreshTokenTTL: 720h
+    secretKey: ${JWT_SECRETKEY}
+    accessTokenTTL: 15m
+    refreshTokenTTL: 720h
