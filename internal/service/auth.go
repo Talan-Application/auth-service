@@ -23,7 +23,7 @@ func NewAuthService(userRepo repository.UserRepository, cfg config.JWTConfig) Au
 	}
 }
 
-func (s *authService) Register(ctx context.Context, email, rawPassword string) (*TokenPair, error) {
+func (s *authService) Register(ctx context.Context, email, rawPassword, firstName, lastName string, middleName *string) (*TokenPair, error) {
 	hash, err := password.Hash(rawPassword)
 	if err != nil {
 		return nil, fmt.Errorf("hash password: %w", err)
@@ -31,8 +31,11 @@ func (s *authService) Register(ctx context.Context, email, rawPassword string) (
 
 	user := &domain.User{
 		Email:        email,
+		FirstName:    firstName,
+		LastName:     lastName,
+		MiddleName:   middleName,
 		PasswordHash: hash,
-		Role:         domain.RoleUser,
+		Role:         domain.RoleStudent,
 	}
 
 	if err := s.userRepo.Create(ctx, user); err != nil {

@@ -5,6 +5,10 @@ import "time"
 type User struct {
 	ID           int64
 	Email        string
+	FirstName    string
+	LastName   string
+	MiddleName   *string
+	PhoneNumber  *string
 	PasswordHash string
 	Role         Role
 	CreatedAt    time.Time
@@ -14,6 +18,8 @@ type User struct {
 type Role string
 
 const (
-	RoleUser  Role = "user"
-	RoleAdmin Role = "admin"
+	RoleStudent Role = "student"
+	RoleCurator Role = "curator"
+	RoleTeacher Role = "teacher"
+	RoleAdmin   Role = "admin"
 )

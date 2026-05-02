@@ -22,11 +22,11 @@ func NewUserRepository(db *pgxpool.Pool) *UserRepository {
 
 func (r *UserRepository) Create(ctx context.Context, user *domain.User) error {
 	query := `
-		INSERT INTO users (email, password_hash, role, created_at, updated_at)
-		VALUES ($1, $2, $3, NOW(), NOW())
+		INSERT INTO users (email, password_hash, first_name, last_name, middle_name, role, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
 		RETURNING id, created_at, updated_at`
 
-	err := r.db.QueryRow(ctx, query, user.Email, user.PasswordHash, user.Role).
+	err := r.db.QueryRow(ctx, query, user.Email, user.PasswordHash, user.FirstName, user.LastName, user.MiddleName, user.Role).
 		Scan(&user.ID, &user.CreatedAt, &user.UpdatedAt)
 	if err != nil {
 		if isUniqueViolation(err) {
@@ -40,12 +40,12 @@ func (r *UserRepository) Create(ctx context.Context, user *domain.User) error {
 
 func (r *UserRepository) FindByEmail(ctx context.Context, email string) (*domain.User, error) {
 	query := `
-		SELECT id, email, password_hash, role, created_at, updated_at
+		SELECT id, email, password_hash, first_name, last_name, middle_name, role, created_at, updated_at
 		FROM users WHERE email = $1`
 
 	user := &domain.User{}
 	err := r.db.QueryRow(ctx, query, email).
-		Scan(&user.ID, &user.Email, &user.PasswordHash, &user.Role, &user.CreatedAt, &user.UpdatedAt)
+		Scan(&user.ID, &user.Email, &user.PasswordHash, &user.FirstName, &user.LastName, &user.MiddleName, &user.Role, &user.CreatedAt, &user.UpdatedAt)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, domain.ErrUserNotFound
@@ -58,12 +58,12 @@ func (r *UserRepository) FindByEmail(ctx context.Context, email string) (*domain
 
 func (r *UserRepository) FindByID(ctx context.Context, id int64) (*domain.User, error) {
 	query := `
-		SELECT id, email, password_hash, role, created_at, updated_at
+		SELECT id, email, password_hash, first_name, last_name, middle_name, role, created_at, updated_at
 		FROM users WHERE id = $1`
 
 	user := &domain.User{}
 	err := r.db.QueryRow(ctx, query, id).
-		Scan(&user.ID, &user.Email, &user.PasswordHash, &user.Role, &user.CreatedAt, &user.UpdatedAt)
+		Scan(&user.ID, &user.Email, &user.PasswordHash, &user.FirstName, &user.LastName, &user.MiddleName, &user.Role, &user.CreatedAt, &user.UpdatedAt)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, domain.ErrUserNotFound
