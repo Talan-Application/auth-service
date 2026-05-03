@@ -10,6 +10,7 @@ import (
 
 	"github.com/Talan-Application/auth-service/internal/config"
 	"github.com/Talan-Application/auth-service/internal/service"
+	authv1 "github.com/Talan-Application/proto-generation/auth/v1"
 )
 
 type Server struct {
@@ -27,9 +28,7 @@ func NewServer(cfg config.GRPCConfig, log *zap.Logger, authSvc service.AuthServi
 	)
 
 	handler := NewHandler(authSvc)
-	// TODO: register after proto generation
-	// authpb.RegisterAuthServiceServer(grpcServer, handler)
-	_ = handler
+	authv1.RegisterAuthServiceServer(grpcServer, handler)
 
 	reflection.Register(grpcServer)
 
