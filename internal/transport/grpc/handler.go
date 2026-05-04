@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 
+	"go.uber.org/zap"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -15,10 +16,11 @@ import (
 type Handler struct {
 	authv1.UnimplementedAuthServiceServer
 	authSvc service.AuthService
+	log     *zap.Logger
 }
 
-func NewHandler(authSvc service.AuthService) *Handler {
-	return &Handler{authSvc: authSvc}
+func NewHandler(authSvc service.AuthService, log *zap.Logger) *Handler {
+	return &Handler{authSvc: authSvc, log: log}
 }
 
 func (h *Handler) Register(ctx context.Context, req *authv1.RegisterRequest) (*authv1.AuthResponse, error) {
@@ -30,7 +32,7 @@ func (h *Handler) Register(ctx context.Context, req *authv1.RegisterRequest) (*a
 		req.MiddleName,
 	)
 	if err != nil {
-		return nil, toGRPCError(err)
+		return nil, h.toGRPCError(err)
 	}
 
 	return &authv1.AuthResponse{
@@ -42,7 +44,7 @@ func (h *Handler) Register(ctx context.Context, req *authv1.RegisterRequest) (*a
 func (h *Handler) Login(ctx context.Context, req *authv1.LoginRequest) (*authv1.AuthResponse, error) {
 	tokens, err := h.authSvc.Login(ctx, req.GetEmail(), req.GetPassword())
 	if err != nil {
-		return nil, toGRPCError(err)
+		return nil, h.toGRPCError(err)
 	}
 
 	return &authv1.AuthResponse{
@@ -54,7 +56,7 @@ func (h *Handler) Login(ctx context.Context, req *authv1.LoginRequest) (*authv1.
 func (h *Handler) RefreshToken(ctx context.Context, req *authv1.RefreshTokenRequest) (*authv1.AuthResponse, error) {
 	tokens, err := h.authSvc.RefreshToken(ctx, req.GetRefreshToken())
 	if err != nil {
-		return nil, toGRPCError(err)
+		return nil, h.toGRPCError(err)
 	}
 
 	return &authv1.AuthResponse{
@@ -66,7 +68,7 @@ func (h *Handler) RefreshToken(ctx context.Context, req *authv1.RefreshTokenRequ
 func (h *Handler) ValidateToken(ctx context.Context, req *authv1.ValidateTokenRequest) (*authv1.ValidateTokenResponse, error) {
 	claims, err := h.authSvc.ValidateToken(ctx, req.GetAccessToken())
 	if err != nil {
-		return nil, toGRPCError(err)
+		return nil, h.toGRPCError(err)
 	}
 
 	return &authv1.ValidateTokenResponse{
@@ -76,7 +78,7 @@ func (h *Handler) ValidateToken(ctx context.Context, req *authv1.ValidateTokenRe
 	}, nil
 }
 
-func toGRPCError(err error) error {
+func (h *Handler) toGRPCError(err error) error {
 	switch {
 	case errors.Is(err, domain.ErrUserNotFound):
 		return status.Error(codes.NotFound, err.Error())
@@ -89,6 +91,7 @@ func toGRPCError(err error) error {
 	case errors.Is(err, domain.ErrTokenExpired):
 		return status.Error(codes.Unauthenticated, err.Error())
 	default:
+		h.log.Error("unexpected error", zap.Error(err))
 		return status.Error(codes.Internal, "internal error")
 	}
 }
