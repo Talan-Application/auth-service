@@ -27,7 +27,7 @@ func NewServer(cfg config.GRPCConfig, log *zap.Logger, authSvc service.AuthServi
 		),
 	)
 
-	handler := NewHandler(authSvc)
+	handler := NewHandler(authSvc, log)
 	authv1.RegisterAuthServiceServer(grpcServer, handler)
 
 	reflection.Register(grpcServer)
