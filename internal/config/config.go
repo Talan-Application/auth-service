@@ -14,6 +14,7 @@ type Config struct {
 	Database DatabaseConfig `mapstructure:"database"`
 	GRPC     GRPCConfig     `mapstructure:"grpc"`
 	JWT      JWTConfig      `mapstructure:"jwt"`
+	RabbitMQ RabbitMQConfig `mapstructure:"rabbitmq"`
 }
 
 type AppConfig struct {
@@ -38,6 +39,10 @@ type JWTConfig struct {
 	SecretKey       string        `mapstructure:"secretKey"`
 	AccessTokenTTL  time.Duration `mapstructure:"accessTokenTTL"`
 	RefreshTokenTTL time.Duration `mapstructure:"refreshTokenTTL"`
+}
+
+type RabbitMQConfig struct {
+	URL string `mapstructure:"url"`
 }
 
 func Load() (*Config, error) {
