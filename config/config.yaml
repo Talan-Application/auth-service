@@ -17,3 +17,6 @@ jwt:
     secretKey: ${JWT_SECRETKEY}
     accessTokenTTL: 15m
     refreshTokenTTL: 720h
+
+rabbitmq:
+    url: ${RABBITMQ_URL}

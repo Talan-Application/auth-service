@@ -3,7 +3,7 @@ include .env
 export
 
 APP      := auth-service
-BIN      := bin/$(APP)
+BIN      := bin/$(APP).exe
 DATABASE_URL ?= postgres://postgres:postgres@localhost:5432/auth_db?sslmode=disable
 PROJECT_ROOT := $(CURDIR)
 export PROJECT_ROOT
@@ -12,8 +12,8 @@ export PROJECT_ROOT
 build:
 	go build -ldflags="-s -w" -o $(BIN) ./cmd/server
 
-run:
-	go run ./cmd/server
+run: build
+	./$(BIN)
 
 test:
 	go test -v -race -count=1 ./...

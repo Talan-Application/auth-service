@@ -2,7 +2,11 @@ package service
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/binary"
 	"fmt"
+
+	"go.uber.org/zap"
 
 	"github.com/Talan-Application/auth-service/internal/config"
 	"github.com/Talan-Application/auth-service/internal/domain"
@@ -11,15 +15,30 @@ import (
 	"github.com/Talan-Application/auth-service/pkg/password"
 )
 
-type authService struct {
-	userRepo repository.UserRepository
-	jwt      *jwt.Manager
+// EventPublisher publishes domain events to the message broker.
+type EventPublisher interface {
+	Publish(ctx context.Context, routingKey string, payload any) error
 }
 
-func NewAuthService(userRepo repository.UserRepository, cfg config.JWTConfig) AuthService {
+type userRegisteredPayload struct {
+	UserID int64  `json:"user_id"`
+	Email  string `json:"email"`
+	Code   string `json:"code"`
+}
+
+type authService struct {
+	userRepo  repository.UserRepository
+	jwt       *jwt.Manager
+	publisher EventPublisher
+	log       *zap.Logger
+}
+
+func NewAuthService(userRepo repository.UserRepository, cfg config.JWTConfig, publisher EventPublisher, log *zap.Logger) AuthService {
 	return &authService{
-		userRepo: userRepo,
-		jwt:      jwt.NewManager(cfg.SecretKey, cfg.AccessTokenTTL, cfg.RefreshTokenTTL),
+		userRepo:  userRepo,
+		jwt:       jwt.NewManager(cfg.SecretKey, cfg.AccessTokenTTL, cfg.RefreshTokenTTL),
+		publisher: publisher,
+		log:       log,
 	}
 }
 
@@ -40,6 +59,15 @@ func (s *authService) Register(ctx context.Context, email, rawPassword, firstNam
 
 	if err := s.userRepo.Create(ctx, user); err != nil {
 		return nil, err
+	}
+
+	code := generateCode()
+	if err := s.publisher.Publish(ctx, "user.registered", userRegisteredPayload{
+		UserID: user.ID,
+		Email:  user.Email,
+		Code:   code,
+	}); err != nil {
+		s.log.Warn("failed to publish user.registered event", zap.Error(err))
 	}
 
 	return s.generateTokenPair(user)
@@ -100,4 +128,12 @@ func (s *authService) generateTokenPair(user *domain.User) (*TokenPair, error) {
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
 	}, nil
+}
+
+// generateCode returns a random 6-digit numeric verification code.
+func generateCode() string {
+	var b [4]byte
+	_, _ = rand.Read(b[:])
+	n := binary.BigEndian.Uint32(b[:]) % 1_000_000
+	return fmt.Sprintf("%06d", n)
 }

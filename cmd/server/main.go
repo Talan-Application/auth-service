@@ -13,6 +13,7 @@ import (
 	"github.com/Talan-Application/auth-service/internal/service"
 	grpcserver "github.com/Talan-Application/auth-service/internal/transport/grpc"
 	"github.com/Talan-Application/auth-service/pkg/logger"
+	"github.com/Talan-Application/auth-service/pkg/rabbitmq"
 )
 
 func main() {
@@ -30,8 +31,16 @@ func main() {
 	}
 	defer db.Close()
 
+	rmqConn, err := rabbitmq.NewConnection(cfg.RabbitMQ.URL, zapLog)
+	if err != nil {
+		zapLog.Fatal("failed to connect to rabbitmq", zap.Error(err))
+	}
+	defer rmqConn.Close()
+
+	publisher := rabbitmq.NewPublisher(rmqConn)
+
 	userRepo := postgres.NewUserRepository(db)
-	authSvc := service.NewAuthService(userRepo, cfg.JWT)
+	authSvc := service.NewAuthService(userRepo, cfg.JWT, publisher, zapLog)
 
 	srv := grpcserver.NewServer(cfg.GRPC, zapLog, authSvc)
 
