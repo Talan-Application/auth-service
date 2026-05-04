@@ -1,5 +1,3 @@
-version: "3.9"
-
 # ── Production Deployment Configuration ────────────────────────────────────
 #
 #   This docker-compose file is designed for production deployments.
@@ -31,6 +29,14 @@ services:
             retries: 5
         ports:
             - "${DATABASE_PORT:-5432}:5432"
+        networks:
+            - auth-network
+
+    # ── auth-service migration ──────────────────────────────────────────────────────────
+    auth-migration:
+        image: migrate/migrate:v4.19.1
+        volumes:
+            - ${PROJECT_ROOT:-./}/migrations:/migrations
         networks:
             - auth-network
 
