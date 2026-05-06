@@ -2,13 +2,15 @@ syntax = "proto3";
 
 package auth.v1;
 
-option go_package = "github.com/Talan-Application/auth-service/gen/go/auth/v1;authv1";
+option go_package = "github.com/Talan-Application/proto-generation/auth/v1;authv1";
 
 service AuthService {
-  rpc Register(RegisterRequest) returns (AuthResponse);
-  rpc Login(LoginRequest) returns (AuthResponse);
+  rpc Register(RegisterRequest) returns (OTPSentResponse);
+  rpc Login(LoginRequest) returns (OTPSentResponse);
   rpc RefreshToken(RefreshTokenRequest) returns (AuthResponse);
   rpc ValidateToken(ValidateTokenRequest) returns (ValidateTokenResponse);
+  rpc VerifyEmail(VerifyCodeRequest) returns (AuthResponse);
+  rpc VerifyLoginCode(VerifyCodeRequest) returns (AuthResponse);
 }
 
 message RegisterRequest {
@@ -24,6 +26,11 @@ message LoginRequest {
   string password = 2;
 }
 
+message VerifyCodeRequest {
+  string email = 1;
+  string code = 2;
+}
+
 message RefreshTokenRequest {
   string refresh_token = 1;
 }
@@ -35,6 +42,10 @@ message ValidateTokenRequest {
 message AuthResponse {
   string access_token = 1;
   string refresh_token = 2;
+}
+
+message OTPSentResponse {
+  string message = 1;
 }
 
 message ValidateTokenResponse {

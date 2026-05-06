@@ -8,4 +8,6 @@ var (
 	ErrInvalidPassword   = errors.New("invalid password")
 	ErrInvalidToken      = errors.New("invalid token")
 	ErrTokenExpired      = errors.New("token expired")
+	ErrInvalidCode       = errors.New("invalid or expired verification code")
+	ErrUserNotVerified   = errors.New("email not verified")
 )
