@@ -3,7 +3,7 @@ module github.com/Talan-Application/auth-service
 go 1.25.5
 
 require (
-	github.com/Talan-Application/proto-generation v0.0.0-20260503083227-ea5406a49eef
+	github.com/Talan-Application/proto-generation v0.0.0-20260506082658-b1909c19ddab
 	github.com/golang-jwt/jwt/v5 v5.2.2
 	github.com/jackc/pgx/v5 v5.9.2
 	github.com/joho/godotenv v1.5.1
