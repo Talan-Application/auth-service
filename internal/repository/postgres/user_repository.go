@@ -92,6 +92,18 @@ func (r *UserRepository) Update(ctx context.Context, user *domain.User) error {
 	return nil
 }
 
+func (r *UserRepository) SetVerified(ctx context.Context, email string) error {
+	query := `UPDATE users SET is_verified = TRUE, updated_at = NOW() WHERE email = $1`
+	tag, err := r.db.Exec(ctx, query, email)
+	if err != nil {
+		return fmt.Errorf("set verified: %w", err)
+	}
+	if tag.RowsAffected() == 0 {
+		return domain.ErrUserNotFound
+	}
+	return nil
+}
+
 func isUniqueViolation(err error) bool {
 	var pgErr *pgconn.PgError
 	return errors.As(err, &pgErr) && pgErr.Code == "23505"

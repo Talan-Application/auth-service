@@ -40,7 +40,8 @@ func main() {
 	publisher := rabbitmq.NewPublisher(rmqConn)
 
 	userRepo := postgres.NewUserRepository(db)
-	authSvc := service.NewAuthService(userRepo, cfg.JWT, publisher, zapLog)
+	codeRepo := postgres.NewCodeRepository(db)
+	authSvc := service.NewAuthService(userRepo, codeRepo, cfg.JWT, publisher, zapLog)
 
 	srv := grpcserver.NewServer(cfg.GRPC, zapLog, authSvc)
 

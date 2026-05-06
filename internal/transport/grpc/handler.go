@@ -9,8 +9,8 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/Talan-Application/auth-service/internal/domain"
-	authv1 "github.com/Talan-Application/proto-generation/auth/v1"
 	"github.com/Talan-Application/auth-service/internal/service"
+	authv1 "github.com/Talan-Application/proto-generation/auth/v1"
 )
 
 type Handler struct {
@@ -23,8 +23,8 @@ func NewHandler(authSvc service.AuthService, log *zap.Logger) *Handler {
 	return &Handler{authSvc: authSvc, log: log}
 }
 
-func (h *Handler) Register(ctx context.Context, req *authv1.RegisterRequest) (*authv1.AuthResponse, error) {
-	tokens, err := h.authSvc.Register(ctx,
+func (h *Handler) Register(ctx context.Context, req *authv1.RegisterRequest) (*authv1.OTPSentResponse, error) {
+	err := h.authSvc.Register(ctx,
 		req.GetEmail(),
 		req.GetPassword(),
 		req.GetFirstName(),
@@ -35,14 +35,32 @@ func (h *Handler) Register(ctx context.Context, req *authv1.RegisterRequest) (*a
 		return nil, h.toGRPCError(err)
 	}
 
+	return &authv1.OTPSentResponse{Message: "verification code sent to your email"}, nil
+}
+
+func (h *Handler) Login(ctx context.Context, req *authv1.LoginRequest) (*authv1.OTPSentResponse, error) {
+	err := h.authSvc.Login(ctx, req.GetEmail(), req.GetPassword())
+	if err != nil {
+		return nil, h.toGRPCError(err)
+	}
+
+	return &authv1.OTPSentResponse{Message: "2FA code sent to your email"}, nil
+}
+
+func (h *Handler) VerifyEmail(ctx context.Context, req *authv1.VerifyCodeRequest) (*authv1.AuthResponse, error) {
+	tokens, err := h.authSvc.VerifyEmail(ctx, req.GetEmail(), req.GetCode())
+	if err != nil {
+		return nil, h.toGRPCError(err)
+	}
+
 	return &authv1.AuthResponse{
 		AccessToken:  tokens.AccessToken,
 		RefreshToken: tokens.RefreshToken,
 	}, nil
 }
 
-func (h *Handler) Login(ctx context.Context, req *authv1.LoginRequest) (*authv1.AuthResponse, error) {
-	tokens, err := h.authSvc.Login(ctx, req.GetEmail(), req.GetPassword())
+func (h *Handler) VerifyLoginCode(ctx context.Context, req *authv1.VerifyCodeRequest) (*authv1.AuthResponse, error) {
+	tokens, err := h.authSvc.VerifyLoginCode(ctx, req.GetEmail(), req.GetCode())
 	if err != nil {
 		return nil, h.toGRPCError(err)
 	}
@@ -90,6 +108,10 @@ func (h *Handler) toGRPCError(err error) error {
 		return status.Error(codes.Unauthenticated, err.Error())
 	case errors.Is(err, domain.ErrTokenExpired):
 		return status.Error(codes.Unauthenticated, err.Error())
+	case errors.Is(err, domain.ErrInvalidCode):
+		return status.Error(codes.Unauthenticated, err.Error())
+	case errors.Is(err, domain.ErrUserNotVerified):
+		return status.Error(codes.FailedPrecondition, err.Error())
 	default:
 		h.log.Error("unexpected error", zap.Error(err))
 		return status.Error(codes.Internal, "internal error")
