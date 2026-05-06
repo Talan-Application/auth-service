@@ -6,11 +6,12 @@ type User struct {
 	ID           int64
 	Email        string
 	FirstName    string
-	LastName   string
+	LastName     string
 	MiddleName   *string
 	PhoneNumber  *string
 	PasswordHash string
 	Role         Role
+	IsVerified   bool
 	CreatedAt    time.Time
 	UpdatedAt    time.Time
 }

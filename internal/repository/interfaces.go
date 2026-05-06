@@ -12,3 +12,7 @@ type UserRepository interface {
 	FindByID(ctx context.Context, id int64) (*domain.User, error)
 	Update(ctx context.Context, user *domain.User) error
 }
+
+type CodeRepository interface {
+	Create(ctx context.Context, code *domain.Code) error
+}

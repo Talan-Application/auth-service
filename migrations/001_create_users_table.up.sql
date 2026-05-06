@@ -7,7 +7,8 @@ CREATE TABLE IF NOT EXISTS users (
     middle_name   VARCHAR(100),
     role          VARCHAR(50)  NOT NULL DEFAULT 'user',
     created_at    TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
-    updated_at    TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+    updated_at    TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    is_verified BOOLEAN NOT NULL DEFAULT FALSE
 );
 
 CREATE INDEX idx_users_email ON users (email);
